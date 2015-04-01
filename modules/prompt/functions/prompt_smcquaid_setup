@@ -10,13 +10,20 @@ pmodload 'helper'
 
 
 function prompt_smcquaid_stock {
-  local gddy=$(curl -s "http://download.finance.yahoo.com/d/quotes.csv?s=gddy&f=l1")
+  CURLRESULT=$(curl -s "http://dev.markitondemand.com/Api/v2/Quote?symbol=GDDY&callback=stock")
+  gddy=`echo $CURLRESULT | sed -e 's,.*<LastPrice>\([^<]*\)</LastPrice>.*,\1,g'`
+  change_percent=`echo $CURLRESULT | sed -e 's,.*<ChangePercent>\([^<]*\)</ChangePercent>.*,\1,g'`
+  timestamp_str=change_percent=`echo $CURLRESULT | sed -e 's,.*<Timestamp>\([^<]*\)</Timestamp>.*,\1,g'`
 
 
   if [[ "$gddy" == "N/A" ]]; then
     _prompt_smcquaid_stock=""
   else
-    _prompt_smcquaid_stock="${gddy}"
+    if [[ "$change_percent" > 0 ]]; then
+      _prompt_smcquaid_stock="%F{green}|$gddy|"
+    else
+      _prompt_smcquaid_stock="%F{red}|$gddy|"
+    fi
   fi
 }
 
@@ -49,7 +56,7 @@ function prompt_smcquaid_setup {
     'rprompt' '%C%D'
 
   # Define prompts.
-  PROMPT='|${(e)_prompt_smcquaid_stock}|%~${(e)git_info[prompt]}$ '
+  PROMPT='${(e)_prompt_smcquaid_stock}%f%~${(e)git_info[prompt]}$ '
   RPROMPT=''
 }
 
